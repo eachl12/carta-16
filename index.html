@@ -1,0 +1,644 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Carta de hoy</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=Cinzel:wght@400;500;600&family=EB+Garamond:ital@0;1&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --night-top: #150a28;
+    --night-mid: #3b1a5a;
+    --night-glow: #b84a1e;
+    --ground-a: #2a1640;
+    --ground-b: #0f0719;
+    --pumpkin: #ff8a1f;
+    --pumpkin-dark: #d96a0c;
+    --candle: #ffe27a;
+    --gold: #d4af6a;
+    --parchment: #f6f1e2;
+    --parchment-edge: #ded1ac;
+    --ink: #3a2f22;
+    --wine: #7a5230;
+  }
+
+  *{ box-sizing: border-box; }
+
+  html, body{
+    margin:0; padding:0;
+    height:100%; width:100%;
+    overflow:hidden;
+    background: linear-gradient(180deg, var(--night-top) 0%, var(--night-mid) 55%, var(--night-glow) 100%);
+    font-family: 'EB Garamond', serif;
+  }
+
+  /* ===== HALLOWEEN NIGHT SCENE ===== */
+  .scene{
+    position:fixed;
+    inset:0;
+    z-index:0;
+    overflow:hidden;
+    pointer-events:none;
+  }
+  .star{
+    position:absolute;
+    background:#fff;
+    border-radius:50%;
+    box-shadow:0 0 4px 1px rgba(255,255,255,.6);
+    animation: twinkle ease-in-out infinite;
+  }
+  @keyframes twinkle{
+    0%,100%{ opacity:var(--min-o,.2); transform:scale(1); }
+    50%{ opacity:var(--max-o,.8); transform:scale(1.4); }
+  }
+
+  .moon{
+    position:absolute;
+    top:7%; right:9%;
+    width:110px; height:110px;
+    border-radius:50%;
+    background: radial-gradient(circle at 38% 34%, #fffbe0, #ffe9a0 55%, #ffc95a 100%);
+    box-shadow:0 0 50px 18px rgba(255,214,120,.35), 0 0 120px 50px rgba(255,170,80,.18);
+  }
+  .moon::before, .moon::after{
+    content:"";
+    position:absolute;
+    border-radius:50%;
+    background:rgba(210,150,60,.28);
+  }
+  .moon::before{ width:22px; height:22px; top:24px; left:28px; }
+  .moon::after{ width:14px; height:14px; top:60px; left:64px; }
+
+  .ground{
+    position:absolute;
+    left:0; right:0; bottom:0;
+    height:22vh;
+    background:linear-gradient(180deg, var(--ground-a) 0%, var(--ground-b) 100%);
+    clip-path: polygon(
+      0% 40%, 8% 28%, 16% 38%, 24% 24%, 32% 36%, 40% 26%, 48% 38%,
+      56% 26%, 64% 36%, 72% 24%, 80% 36%, 88% 26%, 96% 36%, 100% 30%,
+      100% 100%, 0% 100%
+    );
+  }
+  .tomb{
+    position:absolute;
+    bottom:15vh;
+    width:34px; height:48px;
+    background:#241638;
+    border-radius:18px 18px 3px 3px;
+    box-shadow: inset 0 0 0 2px rgba(255,255,255,.05);
+  }
+  .tomb::after{
+    content:"";
+    position:absolute;
+    left:50%; top:10px;
+    width:4px; height:16px;
+    background:rgba(255,255,255,.12);
+    transform:translateX(-50%);
+    box-shadow:-6px 5px 0 0 rgba(255,255,255,.12), 6px 5px 0 0 rgba(255,255,255,.12);
+  }
+  .tree-bg{
+    position:absolute;
+    left:-14px;
+    bottom:12vh;
+    height:40vh;
+    width:auto;
+    opacity:.95;
+  }
+
+  .bat{
+    position:absolute;
+    left:-60px;
+    top:var(--top);
+    width:var(--w);
+    animation: batFly var(--dur) linear infinite;
+    animation-delay: var(--delay);
+    opacity:0;
+  }
+  .bat svg{
+    width:100%; height:auto; display:block;
+    animation: batFlap .35s ease-in-out infinite alternate;
+    transform-origin:50% 50%;
+  }
+  @keyframes batFlap{
+    from{ transform:scaleY(1); }
+    to{ transform:scaleY(.55); }
+  }
+  @keyframes batFly{
+    0%{ transform:translateX(0) translateY(0); opacity:0; }
+    6%{ opacity:.9; }
+    50%{ transform:translateX(55vw) translateY(-22px); }
+    94%{ opacity:.9; }
+    100%{ transform:translateX(115vw) translateY(10px); opacity:0; }
+  }
+
+  .drift{
+    position:absolute;
+    bottom:-10%;
+    opacity:0;
+    animation: driftUp linear infinite;
+    will-change: transform, opacity;
+  }
+  @keyframes driftUp{
+    0%{ transform:translateY(0) translateX(0) rotate(0deg) scale(var(--s,1)); opacity:0; }
+    10%{ opacity:var(--o,.5); }
+    85%{ opacity:var(--o,.5); }
+    100%{ transform:translateY(-115vh) translateX(var(--drift,30px)) rotate(var(--rot,20deg)) scale(var(--s,1)); opacity:0; }
+  }
+
+  .stage{
+    position:relative;
+    z-index:2;
+    width:100%;
+    height:100vh;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+  }
+
+  /* ===== GHOST + PUMPKINS (tap target) ===== */
+  .ghost-wrap{
+    position:relative;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    cursor:pointer;
+  }
+  .ghost-wrap.hidden{ display:none; }
+
+  .ghost-svg{
+    width:min(320px, 84vw);
+    height:auto;
+    overflow:visible;
+  }
+  .ghost-float{
+    animation: ghostFloat 3.4s ease-in-out infinite;
+    transform-origin:150px 200px;
+  }
+  @keyframes ghostFloat{
+    0%,100%{ transform:translateY(0) rotate(-2deg); }
+    50%{ transform:translateY(-12px) rotate(2deg); }
+  }
+  .ghost-glow{
+    animation: glowPulse 2.6s ease-in-out infinite;
+  }
+  @keyframes glowPulse{
+    0%,100%{ opacity:.35; }
+    50%{ opacity:.7; }
+  }
+  .candle-glow{
+    animation: candleFlicker 1.4s ease-in-out infinite;
+  }
+  @keyframes candleFlicker{
+    0%,100%{ opacity:.75; }
+    40%{ opacity:1; }
+    70%{ opacity:.6; }
+  }
+  .ghost-wrap:hover .ghost-float{
+    filter: drop-shadow(0 0 14px rgba(255,255,255,.7));
+  }
+
+  .ghost-wrap.opening .ghost-svg{
+    transition: transform .6s ease-in, opacity .5s ease-in;
+    transform: scale(.15) translateY(-40px);
+    opacity:0;
+  }
+  .ghost-wrap.opening{ pointer-events:none; }
+
+  .day-badge{
+    margin-bottom:8px;
+    padding:6px 20px;
+    background:rgba(20,8,36,.55);
+    border:1px solid rgba(255,200,120,.35);
+    border-radius:18px;
+    color:#ffd48a;
+    font-family:'Cinzel', serif;
+    font-size:14px;
+    letter-spacing:3px;
+    text-transform:uppercase;
+  }
+  .ghost-hint{
+    margin-top:10px;
+    padding:6px 18px;
+    background:rgba(20,8,36,.55);
+    border-radius:16px;
+    color:#ffe9c0;
+    font-family:'Cormorant Garamond', serif;
+    font-style:italic;
+    font-size:18px;
+    letter-spacing:.5px;
+    text-align:center;
+  }
+
+  /* ===== LETTER (scroll, open state) ===== */
+  .letter-container{
+    position:fixed;
+    inset:0;
+    z-index:6;
+    opacity:0;
+    transform:scale(.97);
+    transition:opacity .8s ease, transform .8s cubic-bezier(.2,.7,.3,1.1);
+    pointer-events:none;
+  }
+  .letter-container.show{
+    opacity:1;
+    transform:scale(1);
+    pointer-events:auto;
+  }
+
+  .scroll{
+    position:relative;
+    width:100%;
+    height:100%;
+    max-width:720px;
+    margin:0 auto;
+    background:
+      radial-gradient(ellipse at top left, rgba(180,150,60,.10), transparent 55%),
+      var(--parchment);
+    overflow:hidden;
+    display:flex;
+    flex-direction:column;
+    box-shadow:0 0 90px rgba(0,0,0,.5);
+  }
+  @media (min-width:640px){
+    .letter-container{
+      display:flex; align-items:center; justify-content:center;
+      padding:4vh 0;
+    }
+    .scroll{
+      height:92vh;
+      border-radius:3px;
+      box-shadow:0 30px 80px rgba(0,0,0,.5), 0 0 0 1px var(--parchment-edge);
+    }
+  }
+
+  .scroll::before{
+    content:"";
+    position:absolute; inset:0;
+    pointer-events:none;
+    background-image:repeating-linear-gradient(0deg, transparent, transparent 33px, rgba(122,90,48,.06) 34px);
+    opacity:.5;
+  }
+
+  .scroll-header{
+    flex-shrink:0;
+    padding:34px 40px 8px;
+    text-align:center;
+    border-bottom:1px solid rgba(122,90,48,.18);
+  }
+  .scroll-header .day{
+    font-family:'Cinzel', serif;
+    font-size:14px;
+    letter-spacing:4px;
+    text-transform:uppercase;
+    color:var(--wine);
+    opacity:.75;
+  }
+  .scroll-header .date{
+    font-family:'Cormorant Garamond', serif;
+    font-style:italic;
+    font-size:17px;
+    color:var(--ink);
+    opacity:.65;
+    margin-top:10px;
+  }
+  .scroll-header .date:empty{ display:none; }
+  .scroll-header .title{
+    font-family:'Cinzel', serif;
+    font-size:26px;
+    color:var(--wine);
+    margin-top:8px;
+    letter-spacing:1px;
+  }
+
+  .scroll-body{
+    flex:1;
+    overflow-y:auto;
+    padding:20px 44px 34px;
+    scrollbar-width:thin;
+    scrollbar-color:var(--gold) transparent;
+  }
+  .scroll-body::-webkit-scrollbar{ width:6px; }
+  .scroll-body::-webkit-scrollbar-thumb{ background:var(--parchment-edge); border-radius:4px; }
+  .scroll-body::-webkit-scrollbar-thumb:hover{ background:var(--gold); }
+
+  .letter-text{
+    position:relative; z-index:2;
+    font-family:'Cormorant Garamond', serif;
+    font-size:21px;
+    line-height:1.75;
+    color:var(--ink);
+  }
+  .letter-text p{ margin:0 0 18px; }
+
+  .letter-drift{
+    position:absolute; inset:0;
+    pointer-events:none;
+    z-index:1;
+    overflow:hidden;
+  }
+
+  .close-btn{
+    position:absolute;
+    top:12px; right:16px;
+    z-index:10;
+    background:none; border:none;
+    font-family:'Cormorant Garamond', serif;
+    font-style:italic;
+    font-size:15px;
+    color:var(--gold);
+    cursor:pointer;
+    opacity:.7;
+    transition:opacity .2s ease;
+  }
+  .close-btn:hover{ opacity:1; }
+
+  .music-btn{
+    position:absolute;
+    top:12px; left:16px;
+    z-index:10;
+    width:34px; height:34px;
+    border-radius:50%;
+    border:1px solid var(--parchment-edge);
+    background:var(--parchment);
+    color:var(--wine);
+    font-size:15px;
+    cursor:pointer;
+    display:flex; align-items:center; justify-content:center;
+    box-shadow:0 2px 8px rgba(0,0,0,.18);
+    transition:transform .2s ease, opacity .2s ease;
+    opacity:.85;
+  }
+  .music-btn:hover{ transform:scale(1.08); opacity:1; }
+  .music-btn .note-playing{ display:none; }
+  .music-btn.playing .note-idle{ display:none; }
+  .music-btn.playing .note-playing{ display:inline; }
+  .music-btn.playing{ animation:notePulse 1.6s ease-in-out infinite; }
+  @keyframes notePulse{
+    0%,100%{ box-shadow:0 2px 8px rgba(0,0,0,.18); }
+    50%{ box-shadow:0 2px 14px rgba(122,90,48,.4); }
+  }
+
+  @media (max-width:480px){
+    .letter-text{ font-size:18px; }
+    .scroll-header .title{ font-size:22px; }
+    .scroll-body{ padding:14px 26px 26px; }
+    .scroll-header{ padding:26px 26px 8px; }
+    .moon{ width:80px; height:80px; }
+    .tree-bg{ height:30vh; }
+  }
+
+  @media (prefers-reduced-motion:reduce){
+    .star, .bat, .bat svg, .drift, .ghost-float, .ghost-glow, .candle-glow{ animation:none !important; }
+    .letter-container{ transition:opacity .3s ease !important; }
+  }
+</style>
+</head>
+<body>
+
+<div class="scene" id="scene">
+  <div class="moon"></div>
+
+  <!-- árbol seco -->
+  <svg class="tree-bg" viewBox="0 0 200 260" xmlns="http://www.w3.org/2000/svg">
+    <g fill="none" stroke="#0b0614" stroke-linecap="round">
+      <path d="M100,262 C103,212 96,172 100,128" stroke-width="15"/>
+      <path d="M99,176 C80,156 60,146 40,104" stroke-width="8"/>
+      <path d="M100,150 C122,132 142,122 162,82" stroke-width="7"/>
+      <path d="M100,128 C100,110 104,94 110,70" stroke-width="6"/>
+      <path d="M40,104 C30,92 24,80 18,60" stroke-width="4"/>
+      <path d="M40,104 C52,88 60,82 62,62" stroke-width="4"/>
+      <path d="M162,82 C172,72 178,60 184,40" stroke-width="4"/>
+      <path d="M162,82 C152,72 148,56 150,40" stroke-width="4"/>
+      <path d="M110,70 C116,58 124,50 128,36" stroke-width="3"/>
+      <path d="M110,70 C102,58 96,50 92,38" stroke-width="3"/>
+    </g>
+    <!-- lucecita colgando -->
+    <circle cx="62" cy="64" r="4" fill="#ffb347" opacity=".9"/>
+  </svg>
+
+  <div class="tomb" style="left:66%"></div>
+  <div class="tomb" style="left:78%; height:58px; width:38px"></div>
+  <div class="tomb" style="left:90%"></div>
+
+  <div class="ground"></div>
+</div>
+
+<div class="stage">
+  <div class="ghost-wrap" id="ghostWrap">
+    <div class="day-badge" id="dayBadge">31/10/26</div>
+
+    <svg class="ghost-svg" viewBox="0 0 300 290" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <radialGradient id="ghostBody" cx="45%" cy="35%" r="75%">
+          <stop offset="0%" stop-color="#ffffff"/>
+          <stop offset="70%" stop-color="#f1ecff"/>
+          <stop offset="100%" stop-color="#d9d0f2"/>
+        </radialGradient>
+        <radialGradient id="pumpkinBody" cx="40%" cy="35%" r="75%">
+          <stop offset="0%" stop-color="#ffb04a"/>
+          <stop offset="100%" stop-color="#e6730f"/>
+        </radialGradient>
+      </defs>
+
+      <!-- sombra en el suelo -->
+      <ellipse cx="150" cy="268" rx="130" ry="13" fill="rgba(0,0,0,.35)"/>
+
+      <!-- ===== calabaza izquierda (carita sonriente simple) ===== -->
+      <g transform="translate(64,236)">
+        <ellipse cx="0" cy="0" rx="36" ry="28" fill="url(#pumpkinBody)"/>
+        <ellipse cx="-17" cy="0" rx="14" ry="27" fill="none" stroke="#c75d08" stroke-width="2" opacity=".6"/>
+        <ellipse cx="17" cy="0" rx="14" ry="27" fill="none" stroke="#c75d08" stroke-width="2" opacity=".6"/>
+        <path d="M-3,-27 C-3,-36 4,-38 8,-34" stroke="#4a8a2a" stroke-width="6" fill="none" stroke-linecap="round"/>
+        <path d="M-14,-4 L-8,-12 L-2,-4 Z" fill="#2a1200"/>
+        <path d="M6,-4 L12,-12 L18,-4 Z" fill="#2a1200"/>
+        <path d="M-12,8 Q2,20 16,8" stroke="#2a1200" stroke-width="3.2" fill="none" stroke-linecap="round"/>
+      </g>
+
+      <!-- ===== calabaza derecha (con vela encendida) ===== -->
+      <g transform="translate(240,232)">
+        <ellipse class="candle-glow" cx="0" cy="0" rx="46" ry="38" fill="#ffd27a" opacity=".6"/>
+        <ellipse cx="0" cy="0" rx="40" ry="32" fill="url(#pumpkinBody)"/>
+        <ellipse cx="-19" cy="0" rx="15" ry="31" fill="none" stroke="#c75d08" stroke-width="2" opacity=".6"/>
+        <ellipse cx="19" cy="0" rx="15" ry="31" fill="none" stroke="#c75d08" stroke-width="2" opacity=".6"/>
+        <path d="M-3,-31 C-3,-41 5,-43 9,-38" stroke="#4a8a2a" stroke-width="6.5" fill="none" stroke-linecap="round"/>
+        <!-- cara iluminada -->
+        <path d="M-17,-6 L-10,-16 L-3,-6 Z" fill="#fff0a8"/>
+        <path d="M5,-6 L12,-16 L19,-6 Z" fill="#fff0a8"/>
+        <path d="M-20,6 L-12,12 L-6,6 L0,13 L6,6 L12,12 L20,6 L12,20 L0,14 L-12,20 Z" fill="#fff0a8"/>
+      </g>
+
+      <!-- ===== FANTASMITA ===== -->
+      <g class="ghost-float">
+        <ellipse class="ghost-glow" cx="150" cy="130" rx="86" ry="104" fill="#cfc2ff"/>
+        <!-- cuerpo -->
+        <path d="M96,206 C96,84 122,44 150,44 C178,44 204,84 204,206
+                 Q190,226 177,206 Q163,226 150,206 Q137,226 123,206 Q109,226 96,206 Z"
+              fill="url(#ghostBody)"/>
+        <!-- bracitos -->
+        <ellipse cx="94" cy="148" rx="16" ry="9" fill="#f1ecff" transform="rotate(28 94 148)"/>
+        <ellipse cx="206" cy="148" rx="16" ry="9" fill="#f1ecff" transform="rotate(-28 206 148)"/>
+        <!-- carita -->
+        <ellipse cx="130" cy="112" rx="8" ry="11" fill="#2a1f3d"/>
+        <ellipse cx="170" cy="112" rx="8" ry="11" fill="#2a1f3d"/>
+        <circle cx="132.5" cy="107" r="2.6" fill="#fff"/>
+        <circle cx="172.5" cy="107" r="2.6" fill="#fff"/>
+        <ellipse cx="150" cy="140" rx="7" ry="9" fill="#2a1f3d"/>
+        <ellipse cx="116" cy="130" rx="9" ry="5.5" fill="#ffb3c9" opacity=".7"/>
+        <ellipse cx="184" cy="130" rx="9" ry="5.5" fill="#ffb3c9" opacity=".7"/>
+        <!-- sombrerito de bruja -->
+        <ellipse cx="150" cy="54" rx="44" ry="10" fill="#4a2278"/>
+        <path d="M120,54 Q150,44 180,54 L160,6 Q151,-2 142,6 Z" fill="#5d2c94"/>
+        <path d="M124,50 Q150,41 176,50 L172,38 Q150,30 128,38 Z" fill="#ffc94a"/>
+        <circle cx="160" cy="44" r="3.4" fill="#fff4c2"/>
+      </g>
+    </svg>
+
+    <div class="ghost-hint">toca al fantasmita para leer la carta de hoy</div>
+  </div>
+
+  <div class="letter-container" id="letterContainer">
+    <div class="scroll">
+      <button class="close-btn" id="closeBtn">cerrar ✕</button>
+      <button class="music-btn" id="musicBtn" aria-label="Pausar o reproducir música">
+        <span class="note-idle">🎵</span><span class="note-playing">⏸</span>
+      </button>
+      <audio id="bgAudio" src="carta16.mp3" loop preload="auto"></audio>
+      <div class="letter-drift" id="letterDrift"></div>
+
+      <div class="scroll-header">
+        <div class="day" id="dayLabel">31/10/26</div>
+        <div class="title" id="titleLabel">Carta 16</div>
+        <div class="date" id="subtitleLabel"></div>
+      </div>
+
+      <div class="scroll-body">
+        <div class="letter-text" id="letterText">
+<p>[Aquí va el texto de hoy — mándamelo y lo coloco tal cual, sin cambiar nada.]</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  /* ====== CONFIGURA AQUÍ CADA DÍA ======
+     1) DAY_NUMBER: el número de carta
+     2) DATE_LABEL: la fecha de hoy
+     3) SUBTITLE_TEXT: frase bajo el título (vacío = no se muestra)
+     4) El texto va dentro de #letterText
+     5) Cambia el src del audio por el de hoy
+  ============================================ */
+  const DAY_NUMBER = 16;
+  const DATE_LABEL = '31/10/26';
+  const SUBTITLE_TEXT = '';
+
+  document.getElementById('dayBadge').textContent = DATE_LABEL;
+  document.getElementById('dayLabel').textContent = DATE_LABEL;
+  document.getElementById('titleLabel').textContent = 'Carta ' + DAY_NUMBER;
+  document.getElementById('subtitleLabel').textContent = SUBTITLE_TEXT;
+
+  function rand(min, max){ return Math.random() * (max - min) + min; }
+
+  const scene = document.getElementById('scene');
+
+  // estrellas
+  for(let i=0; i<55; i++){
+    const s = document.createElement('div');
+    s.className = 'star';
+    const size = rand(1.2, 2.8);
+    s.style.width = size + 'px';
+    s.style.height = size + 'px';
+    s.style.left = rand(0,100) + '%';
+    s.style.top = rand(0,55) + '%';
+    s.style.animationDuration = rand(2,5) + 's';
+    s.style.animationDelay = '-' + rand(0,5) + 's';
+    s.style.setProperty('--min-o', rand(.15,.3));
+    s.style.setProperty('--max-o', rand(.6,.9));
+    scene.appendChild(s);
+  }
+
+  // murciélagos cruzando el cielo
+  const BAT_SVG = '<svg viewBox="0 0 40 20" xmlns="http://www.w3.org/2000/svg"><path d="M20,10 C16,2 8,0 0,4 C6,6 8,10 10,14 C13,11 16,11 20,14 C24,11 27,11 30,14 C32,10 34,6 40,4 C32,0 24,2 20,10 Z" fill="#0a0612"/></svg>';
+  [
+    { top:'14%', w:44, dur:20, delay:-4 },
+    { top:'26%', w:34, dur:26, delay:-14 },
+    { top:'9%',  w:30, dur:23, delay:-20 },
+    { top:'34%', w:38, dur:30, delay:-9 },
+  ].forEach(b => {
+    const el = document.createElement('div');
+    el.className = 'bat';
+    el.style.setProperty('--top', b.top);
+    el.style.setProperty('--w', b.w + 'px');
+    el.style.setProperty('--dur', b.dur + 's');
+    el.style.setProperty('--delay', b.delay + 's');
+    el.innerHTML = BAT_SVG;
+    scene.appendChild(el);
+  });
+
+  // calabazas, fantasmitas y corazones flotando
+  const DRIFT_SYMBOLS = ['💜','🎃','👻','🦇','✨','💗'];
+  function spawnDrift(containerId, count, sizeRange, opacityRange, durationRange, className){
+    const container = document.getElementById(containerId);
+    for(let i=0; i<count; i++){
+      const el = document.createElement('span');
+      el.className = className;
+      el.textContent = DRIFT_SYMBOLS[Math.floor(Math.random()*DRIFT_SYMBOLS.length)];
+      const size = rand(sizeRange[0], sizeRange[1]);
+      const duration = rand(durationRange[0], durationRange[1]);
+      const delay = rand(0, durationRange[1]);
+      el.style.left = rand(0,100) + '%';
+      el.style.fontSize = size + 'px';
+      el.style.animationDuration = duration + 's';
+      el.style.animationDelay = '-' + delay + 's';
+      el.style.setProperty('--drift', rand(-60,60) + 'px');
+      el.style.setProperty('--rot', rand(-30,30) + 'deg');
+      el.style.setProperty('--o', rand(opacityRange[0], opacityRange[1]));
+      el.style.setProperty('--s', rand(.8,1.15));
+      container.appendChild(el);
+    }
+  }
+  spawnDrift('scene', 9, [14,24], [.25,.5], [11,20], 'drift');
+  spawnDrift('letterDrift', 12, [14,22], [.10,.20], [9,16], 'drift');
+
+  const ghostWrap = document.getElementById('ghostWrap');
+  const letterContainer = document.getElementById('letterContainer');
+  const closeBtn = document.getElementById('closeBtn');
+  const musicBtn = document.getElementById('musicBtn');
+  const bgAudio = document.getElementById('bgAudio');
+
+  function playMusic(){
+    bgAudio.play().then(() => musicBtn.classList.add('playing'))
+      .catch(() => musicBtn.classList.remove('playing'));
+  }
+  function pauseMusic(){
+    bgAudio.pause();
+    musicBtn.classList.remove('playing');
+  }
+
+  ghostWrap.addEventListener('click', () => {
+    ghostWrap.classList.add('opening');
+    setTimeout(() => {
+      ghostWrap.classList.add('hidden');
+      letterContainer.classList.add('show');
+    }, 550);
+    playMusic();
+  });
+
+  closeBtn.addEventListener('click', () => {
+    letterContainer.classList.remove('show');
+    setTimeout(() => {
+      ghostWrap.classList.remove('hidden');
+      ghostWrap.classList.remove('opening');
+    }, 450);
+    pauseMusic();
+  });
+
+  musicBtn.addEventListener('click', () => {
+    if(bgAudio.paused){ playMusic(); } else { pauseMusic(); }
+  });
+</script>
+
+</body>
+</html>
